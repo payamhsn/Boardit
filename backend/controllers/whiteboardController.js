@@ -63,9 +63,45 @@ const updateWhiteboard = asyncHandler(async (req, res) => {
   }
 });
 
+// @desc    Invite a collaborator to a whiteboard
+// @route   POST /api/whiteboards/:id/invite
+// @access  Private
+const inviteCollaborator = asyncHandler(async (req, res) => {
+  const { email } = req.body;
+  const whiteboard = await Whiteboard.findById(req.params.id);
+
+  if (!whiteboard) {
+    res.status(404);
+    throw new Error("Whiteboard not found");
+  }
+
+  if (whiteboard.owner.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error("Not authorized to invite collaborators");
+  }
+
+  const collaborator = await User.findOne({ email });
+
+  if (!collaborator) {
+    res.status(404);
+    throw new Error("User not found");
+  }
+
+  if (whiteboard.collaborators.includes(collaborator._id)) {
+    res.status(400);
+    throw new Error("User is already a collaborator");
+  }
+
+  whiteboard.collaborators.push(collaborator._id);
+  await whiteboard.save();
+
+  res.status(200).json({ message: "Collaborator invited successfully" });
+});
+
 export {
   createWhiteboard,
   getUserWhiteboards,
   getWhiteboardById,
   updateWhiteboard,
+  inviteCollaborator,
 };

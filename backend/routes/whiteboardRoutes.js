@@ -5,9 +5,12 @@ import {
   getUserWhiteboards,
   getWhiteboardById,
   updateWhiteboard,
+  inviteCollaborator,
 } from "../controllers/whiteboardController.js";
 
 const router = express.Router();
+
+router.post("/:id/invite", protect, inviteCollaborator);
 
 router
   .route("/")

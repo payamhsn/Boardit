@@ -5,6 +5,7 @@ import Navbar from "./components/Navbar";
 import RegisterPage from "./screens/RegisterPage";
 import AboutPage from "./screens/AboutPage";
 import DashboardPage from "./screens/DashboardPage";
+import WhiteboardPage from "./screens/WhiteboardPage";
 import HomePage from "./screens/HomePage";
 import Footer from "./components/Footer";
 import LoginPage from "./screens/LoginPage";
@@ -62,6 +63,14 @@ export default function App() {
             element={
               <ProtectedRoute isLoggedIn={isLoggedIn}>
                 <DashboardPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/whiteboard/:id"
+            element={
+              <ProtectedRoute isLoggedIn={isLoggedIn}>
+                <WhiteboardPage />
               </ProtectedRoute>
             }
           />
