@@ -3,6 +3,7 @@ import http from "http";
 import { Server } from "socket.io";
 import path from "path";
 import dotenv from "dotenv";
+import cors from "cors";
 import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
 import connectDB from "./config/db.js";
@@ -15,7 +16,18 @@ connectDB();
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server);
+
+// CORS configuration
+const corsOptions = {
+  origin: "http://localhost:3000", // Replace with your frontend URL
+  credentials: true,
+};
+
+app.use(cors(corsOptions));
+
+const io = new Server(server, {
+  cors: corsOptions, // Add CORS to socket.io as well
+});
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));

@@ -31,37 +31,36 @@ const getUserWhiteboards = asyncHandler(async (req, res) => {
 // @desc    Get a whiteboard by ID
 // @route   GET /api/whiteboards/:id
 // @access  Private
-const getWhiteboardById = asyncHandler(async (req, res) => {
-  const whiteboard = await Whiteboard.findById(req.params.id);
-
-  if (whiteboard) {
-    res.json(whiteboard);
-  } else {
-    res.status(404);
-    throw new Error("Whiteboard not found");
+const getWhiteboardById = async (req, res) => {
+  try {
+    const whiteboard = await Whiteboard.findById(req.params.id);
+    if (whiteboard) {
+      res.json(whiteboard);
+    } else {
+      res.status(404).json({ message: "Whiteboard not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-});
+};
 
 // @desc    Update a whiteboard
 // @route   PUT /api/whiteboards/:id
 // @access  Private
-const updateWhiteboard = asyncHandler(async (req, res) => {
-  const { name, data, collaborators } = req.body;
-
-  const whiteboard = await Whiteboard.findById(req.params.id);
-
-  if (whiteboard) {
-    whiteboard.name = name || whiteboard.name;
-    whiteboard.data = data || whiteboard.data;
-    whiteboard.collaborators = collaborators || whiteboard.collaborators;
-
-    const updatedWhiteboard = await whiteboard.save();
-    res.json(updatedWhiteboard);
-  } else {
-    res.status(404);
-    throw new Error("Whiteboard not found");
+const updateWhiteboard = async (req, res) => {
+  try {
+    const whiteboard = await Whiteboard.findById(req.params.id);
+    if (whiteboard) {
+      whiteboard.data = req.body.data;
+      const updatedWhiteboard = await whiteboard.save();
+      res.json(updatedWhiteboard);
+    } else {
+      res.status(404).json({ message: "Whiteboard not found" });
+    }
+  } catch (error) {
+    res.status(500).json({ message: "Server error" });
   }
-});
+};
 
 // @desc    Invite a collaborator to a whiteboard
 // @route   POST /api/whiteboards/:id/invite

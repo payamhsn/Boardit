@@ -1,5 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import io from "socket.io-client";
+import axios from "axios";
+import PropTypes from "prop-types";
 
 const Whiteboard = ({ id }) => {
   const canvasRef = useRef(null);
@@ -7,12 +9,36 @@ const Whiteboard = ({ id }) => {
   const [isDrawing, setIsDrawing] = useState(false);
 
   useEffect(() => {
-    const newSocket = io("http://localhost:5000");
+    const newSocket = io("http://localhost:5000", {
+      withCredentials: true,
+    });
     setSocket(newSocket);
 
     newSocket.emit("join-room", id);
 
     return () => newSocket.close();
+  }, [id]);
+
+  useEffect(() => {
+    const loadWhiteboard = async () => {
+      try {
+        const response = await axios.get(`/api/whiteboards/${id}`);
+        const imageData = response.data.data;
+        if (imageData) {
+          const canvas = canvasRef.current;
+          const context = canvas.getContext("2d");
+          const image = new Image();
+          image.onload = () => {
+            context.drawImage(image, 0, 0);
+          };
+          image.src = imageData;
+        }
+      } catch (error) {
+        console.error("Error loading whiteboard:", error);
+      }
+    };
+
+    loadWhiteboard();
   }, [id]);
 
   useEffect(() => {
@@ -31,17 +57,27 @@ const Whiteboard = ({ id }) => {
       context.moveTo(x, y);
     };
 
+    const getMousePos = (canvas, evt) => {
+      const rect = canvas.getBoundingClientRect();
+      return {
+        x: evt.clientX - rect.left,
+        y: evt.clientY - rect.top,
+      };
+    };
+
     const handleMouseDown = (e) => {
       setIsDrawing(true);
-      draw(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+      const pos = getMousePos(canvas, e);
+      draw(pos.x, pos.y);
     };
 
     const handleMouseMove = (e) => {
       if (!isDrawing) return;
-      draw(e.nativeEvent.offsetX, e.nativeEvent.offsetY);
+      const pos = getMousePos(canvas, e);
+      draw(pos.x, pos.y);
       socket.emit("draw", {
-        x: e.nativeEvent.offsetX,
-        y: e.nativeEvent.offsetY,
+        x: pos.x,
+        y: pos.y,
         roomId: id,
       });
     };
@@ -54,11 +90,13 @@ const Whiteboard = ({ id }) => {
     canvas.addEventListener("mousedown", handleMouseDown);
     canvas.addEventListener("mousemove", handleMouseMove);
     canvas.addEventListener("mouseup", handleMouseUp);
+    canvas.addEventListener("mouseout", handleMouseUp);
 
     return () => {
       canvas.removeEventListener("mousedown", handleMouseDown);
       canvas.removeEventListener("mousemove", handleMouseMove);
       canvas.removeEventListener("mouseup", handleMouseUp);
+      canvas.removeEventListener("mouseout", handleMouseUp);
     };
   }, [isDrawing, socket, id]);
 
@@ -114,6 +152,10 @@ const Whiteboard = ({ id }) => {
       </button>
     </div>
   );
+};
+
+Whiteboard.propTypes = {
+  id: PropTypes.string.isRequired,
 };
 
 export default Whiteboard;
