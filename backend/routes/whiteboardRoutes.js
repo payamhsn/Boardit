@@ -6,6 +6,7 @@ import {
   getWhiteboardById,
   updateWhiteboard,
   inviteCollaborator,
+  deleteWhiteboard,
 } from "../controllers/whiteboardController.js";
 
 const router = express.Router();
@@ -19,6 +20,7 @@ router
 router
   .route("/:id")
   .get(protect, getWhiteboardById)
-  .put(protect, updateWhiteboard);
+  .put(protect, updateWhiteboard)
+  .delete(protect, deleteWhiteboard);
 
 export default router;

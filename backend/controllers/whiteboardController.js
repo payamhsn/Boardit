@@ -6,18 +6,11 @@ import Whiteboard from "../models/whiteboardModel.js";
 // @access  Private
 const createWhiteboard = asyncHandler(async (req, res) => {
   const { name } = req.body;
-
   const whiteboard = await Whiteboard.create({
     name,
     owner: req.user._id,
   });
-
-  if (whiteboard) {
-    res.status(201).json(whiteboard);
-  } else {
-    res.status(400);
-    throw new Error("Invalid whiteboard data");
-  }
+  res.status(201).json(whiteboard);
 });
 
 // @desc    Get user whiteboards
@@ -97,8 +90,27 @@ const inviteCollaborator = asyncHandler(async (req, res) => {
   res.status(200).json({ message: "Collaborator invited successfully" });
 });
 
+const deleteWhiteboard = asyncHandler(async (req, res) => {
+  const whiteboard = await Whiteboard.findById(req.params.id);
+
+  if (!whiteboard) {
+    res.status(404);
+    throw new Error("Whiteboard not found");
+  }
+
+  // Check if the user is the owner of the whiteboard
+  if (whiteboard.owner.toString() !== req.user._id.toString()) {
+    res.status(403);
+    throw new Error("User not authorized to delete this whiteboard");
+  }
+
+  await Whiteboard.deleteOne({ _id: req.params.id });
+  res.json({ message: "Whiteboard removed" });
+});
+
 export {
   createWhiteboard,
+  deleteWhiteboard,
   getUserWhiteboards,
   getWhiteboardById,
   updateWhiteboard,
