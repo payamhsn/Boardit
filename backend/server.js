@@ -1,24 +1,44 @@
-import path from "path";
 import express from "express";
+import http from "http";
+import { Server } from "socket.io";
+import path from "path";
 import dotenv from "dotenv";
-dotenv.config();
-import connectDB from "./config/db.js";
 import cookieParser from "cookie-parser";
 import { notFound, errorHandler } from "./middleware/errorMiddleware.js";
+import connectDB from "./config/db.js";
 import userRoutes from "./routes/userRoutes.js";
+import whiteboardRoutes from "./routes/whiteboardRoutes.js";
 
-const port = process.env.PORT || 5000;
+dotenv.config();
 
 connectDB();
 
 const app = express();
+const server = http.createServer(app);
+const io = new Server(server);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-
 app.use(cookieParser());
 
 app.use("/api/users", userRoutes);
+app.use("/api/whiteboards", whiteboardRoutes);
+
+io.on("connection", (socket) => {
+  console.log("A user connected");
+
+  socket.on("join-room", (roomId) => {
+    socket.join(roomId);
+  });
+
+  socket.on("draw", (data) => {
+    socket.to(data.roomId).emit("draw", data);
+  });
+
+  socket.on("disconnect", () => {
+    console.log("User disconnected");
+  });
+});
 
 if (process.env.NODE_ENV === "production") {
   const __dirname = path.resolve();
@@ -35,4 +55,6 @@ if (process.env.NODE_ENV === "production") {
 app.use(notFound);
 app.use(errorHandler);
 
-app.listen(port, () => console.log(`Server started on port ${port}`));
+const PORT = process.env.PORT || 5000;
+
+server.listen(PORT, () => console.log(`Server started on port ${PORT}`));
