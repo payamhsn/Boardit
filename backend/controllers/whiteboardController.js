@@ -1,5 +1,6 @@
 import asyncHandler from "express-async-handler";
 import Whiteboard from "../models/whiteboardModel.js";
+import User from "../models/userModel.js";
 
 // @desc    Create a new whiteboard
 // @route   POST /api/whiteboards
@@ -67,27 +68,22 @@ const inviteCollaborator = asyncHandler(async (req, res) => {
     throw new Error("Whiteboard not found");
   }
 
-  if (whiteboard.owner.toString() !== req.user._id.toString()) {
-    res.status(403);
-    throw new Error("Not authorized to invite collaborators");
-  }
+  const user = await User.findOne({ email });
 
-  const collaborator = await User.findOne({ email });
-
-  if (!collaborator) {
+  if (!user) {
     res.status(404);
     throw new Error("User not found");
   }
 
-  if (whiteboard.collaborators.includes(collaborator._id)) {
+  if (whiteboard.collaborators.includes(user._id)) {
     res.status(400);
     throw new Error("User is already a collaborator");
   }
 
-  whiteboard.collaborators.push(collaborator._id);
+  whiteboard.collaborators.push(user._id);
   await whiteboard.save();
 
-  res.status(200).json({ message: "Collaborator invited successfully" });
+  res.status(200).json({ message: "Collaborator added successfully" });
 });
 
 const deleteWhiteboard = asyncHandler(async (req, res) => {
@@ -108,11 +104,29 @@ const deleteWhiteboard = asyncHandler(async (req, res) => {
   res.json({ message: "Whiteboard removed" });
 });
 
+// @desc    Get collaborative whiteboards
+// @route   GET /api/whiteboards/collaborative
+// @access  Private
+const getCollaborativeWhiteboards = asyncHandler(async (req, res) => {
+  try {
+    console.log("User ID:", req.user._id); // Log the user ID
+    const whiteboards = await Whiteboard.find({
+      collaborators: req.user._id,
+    }).populate("owner", "name");
+    console.log("Fetched whiteboards:", whiteboards); // Log the fetched whiteboards
+    res.json(whiteboards);
+  } catch (error) {
+    console.error("Error in getCollaborativeWhiteboards:", error);
+    res.status(500).json({ message: "Server error", error: error.message });
+  }
+});
+
 export {
   createWhiteboard,
   deleteWhiteboard,
   getUserWhiteboards,
   getWhiteboardById,
+  getCollaborativeWhiteboards,
   updateWhiteboard,
   inviteCollaborator,
 };

@@ -5,11 +5,13 @@ import { Link } from "react-router-dom";
 const DashboardPage = () => {
   const [activeTab, setActiveTab] = useState("whiteboards");
   const [whiteboards, setWhiteboards] = useState([]);
+  const [collaborativeWhiteboards, setCollaborativeWhiteboards] = useState([]);
   const [user, setUser] = useState(null);
   const [newWhiteboardName, setNewWhiteboardName] = useState("");
 
   useEffect(() => {
     fetchWhiteboards();
+    fetchCollaborativeWhiteboards();
     fetchUserProfile();
   }, []);
 
@@ -19,6 +21,15 @@ const DashboardPage = () => {
       setWhiteboards(data);
     } catch (error) {
       console.error("Error fetching whiteboards:", error);
+    }
+  };
+
+  const fetchCollaborativeWhiteboards = async () => {
+    try {
+      const { data } = await axios.get("/api/whiteboards/collaborative");
+      setCollaborativeWhiteboards(data);
+    } catch (error) {
+      console.error("Error fetching collaborative whiteboards:", error);
     }
   };
 
@@ -79,6 +90,16 @@ const DashboardPage = () => {
           My Whiteboards
         </button>
         <button
+          className={`mr-2 ${
+            activeTab === "collaborative"
+              ? "bg-blue-500 text-white"
+              : "bg-gray-200"
+          } px-4 py-2 rounded`}
+          onClick={() => setActiveTab("collaborative")}
+        >
+          Collaborative Whiteboards
+        </button>
+        <button
           className={`${
             activeTab === "profile" ? "bg-blue-500 text-white" : "bg-gray-200"
           } px-4 py-2 rounded`}
@@ -98,27 +119,26 @@ const DashboardPage = () => {
               onChange={(e) => setNewWhiteboardName(e.target.value)}
               placeholder="New whiteboard name"
               className="border p-2 mr-2"
-              required
             />
             <button
               type="submit"
-              className="bg-green-500 text-white px-4 py-2 rounded"
+              className="bg-blue-500 text-white px-4 py-2 rounded"
             >
               Create Whiteboard
             </button>
           </form>
           <ul>
             {whiteboards.map((whiteboard) => (
-              <li key={whiteboard._id} className="mb-2">
+              <li key={whiteboard._id} className="mb-2 flex items-center">
                 <Link
                   to={`/whiteboard/${whiteboard._id}`}
-                  className="text-blue-500 hover:underline"
+                  className="text-blue-500 hover:underline mr-2"
                 >
                   {whiteboard.name}
                 </Link>
                 <button
                   onClick={() => deleteWhiteboard(whiteboard._id)}
-                  className="ml-2 bg-red-500 text-white px-2 py-1 rounded text-sm"
+                  className="bg-red-500 text-white px-2 py-1 rounded text-sm"
                 >
                   Delete
                 </button>
@@ -128,15 +148,32 @@ const DashboardPage = () => {
         </div>
       )}
 
+      {activeTab === "collaborative" && (
+        <div>
+          <h2 className="text-2xl font-bold mb-2">Collaborative Whiteboards</h2>
+          <ul>
+            {collaborativeWhiteboards.map((whiteboard) => (
+              <li key={whiteboard._id} className="mb-2">
+                <Link
+                  to={`/whiteboard/${whiteboard._id}`}
+                  className="text-blue-500 hover:underline"
+                >
+                  {whiteboard.name}
+                </Link>
+                <span className="ml-2 text-gray-500">
+                  (Owner: {whiteboard.owner.name})
+                </span>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {activeTab === "profile" && user && (
         <div>
           <h2 className="text-2xl font-bold mb-2">Profile Information</h2>
-          <p>
-            <strong>Name:</strong> {user.name}
-          </p>
-          <p>
-            <strong>Email:</strong> {user.email}
-          </p>
+          <p>Name: {user.name}</p>
+          <p>Email: {user.email}</p>
           {/* Add more user information as needed */}
         </div>
       )}

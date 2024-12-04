@@ -11,16 +11,16 @@ const whiteboardSchema = mongoose.Schema(
       required: true,
       ref: "User",
     },
-    data: {
-      type: String,
-      default: "",
-    },
     collaborators: [
       {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
       },
     ],
+    data: {
+      type: String,
+      default: "",
+    },
   },
   {
     timestamps: true,
