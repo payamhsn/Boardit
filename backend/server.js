@@ -47,6 +47,14 @@ io.on("connection", (socket) => {
     socket.to(data.roomId).emit("draw", data);
   });
 
+  socket.on("request-initial-state", (roomId) => {
+    socket.to(roomId).emit("request-initial-state");
+  });
+
+  socket.on("initial-state", (data) => {
+    socket.to(data.roomId).emit("initial-state", data.imageData);
+  });
+
   socket.on("disconnect", () => {
     console.log("User disconnected");
   });

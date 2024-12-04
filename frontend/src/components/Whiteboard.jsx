@@ -103,6 +103,25 @@ const Whiteboard = ({ id }) => {
   useEffect(() => {
     if (!socket) return;
 
+    socket.emit("request-initial-state", id);
+
+    socket.on("initial-state", (imageData) => {
+      const canvas = canvasRef.current;
+      const context = canvas.getContext("2d");
+      const image = new Image();
+      image.onload = () => {
+        context.drawImage(image, 0, 0);
+      };
+      image.src = imageData;
+    });
+
+    socket.on("request-initial-state", () => {
+      const canvas = canvasRef.current;
+      const imageData = canvas.toDataURL();
+      socket.emit("initial-state", { roomId: id, imageData });
+    });
+
+    // Existing socket event listeners...
     const handleDraw = (data) => {
       const canvas = canvasRef.current;
       const context = canvas.getContext("2d");
@@ -121,8 +140,17 @@ const Whiteboard = ({ id }) => {
 
     return () => {
       socket.off("draw", handleDraw);
+      socket.off("initial-state");
+      socket.off("request-initial-state");
     };
-  }, [socket]);
+  }, [socket, id]);
+
+  const shareWhiteboard = () => {
+    const url = window.location.href;
+    navigator.clipboard.writeText(url).then(() => {
+      alert("Whiteboard URL copied to clipboard!");
+    });
+  };
 
   const saveWhiteboard = async () => {
     const canvas = canvasRef.current;
@@ -149,6 +177,12 @@ const Whiteboard = ({ id }) => {
         className="mt-4 bg-green-500 hover:bg-green-700 text-white font-bold py-2 px-4 rounded"
       >
         Save Whiteboard
+      </button>
+      <button
+        onClick={shareWhiteboard}
+        className="mt-4 ml-2 bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded"
+      >
+        Share Whiteboard
       </button>
     </div>
   );
